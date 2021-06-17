@@ -22,8 +22,12 @@ OptionParser.new do |parser|
         options[:token] = x
     end
 
-    parser.on("-o", "--output [PATH]", "Folder in which results will be stored.") do |x|
+    parser.on("-o", "--output [PATH]", "Specify where results will be saved.") do |x|
         options[:output] = x
+    end
+
+    parser.on("-d", "--details", "Save repository details when -s is used") do |x|
+        options[:save_details] = true
     end
 
     parser.on("-l", "--log", "Writes repository details to repositories.json") do
@@ -57,6 +61,9 @@ app.fetch_repos(input.to_query)
 
 if options.has_key? :sample
     app.sample(options[:sample])
+    if options.has_key? :save_details
+        app.save_details
+    end
 end
 
 # if options.has_key? :log
@@ -64,10 +71,9 @@ end
 # end
 
 if options.has_key? :clone
-    if options.has_key? :output
-        app.clone
-    else
-        puts "Error, need output folder to clone."
+    if !options.has_key? :output
+        puts "Cloning into default folder /output."
     end
+    app.clone
 end
 

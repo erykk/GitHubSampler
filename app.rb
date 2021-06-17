@@ -22,7 +22,10 @@ class App
       :auto_pagination => true
     )
     @options = options
+    create_results_dir
   end
+
+  #{repo.full_name.split("/")[1]}
 
   def get_access_token(token)
 
@@ -31,6 +34,20 @@ class App
     end
 
     IO.read(token).to_str
+  end
+
+  def save_details
+    details_output_dir = "#{@output_dir}/details"
+    if !File.directory? details_output_dir
+      FileUtils.mkdir_p details_output_dir
+    end
+
+    puts "Writing details"
+    puts details_output_dir
+    repo_hash = Hash.new
+    @repos.each do |repo|
+      File.open( "#{details_output_dir}/test.json", "w+") { |f| f.write(repo) }
+    end
   end
 
   def fetch_repos(query)
@@ -45,10 +62,6 @@ class App
   end
 
   def clone
-    if !File.directory? @options[:output]
-      FileUtils.mkdir_p @options[:output]
-    end
-
     @repos.each do |repo|
       clone_repo(repo.full_name)
     end
@@ -65,12 +78,34 @@ class App
   private
 
   def clone_repo(repo_name)
-    if !File.directory? "#{@options[:output]}/#{repo_name}"
-      FileUtils.mkdir_p "#{@options[:output]}/#{repo_name}"
+    if !File.directory? "#{@output_dir}/#{repo_name}"
+      FileUtils.mkdir_p "#{@output_dir}/#{repo_name}"
     end
-    puts "Cloning repository #{repo_name} into #{@options[:output]}/#{repo_name}"
+    puts "Cloning repository #{repo_name} into #{@output_dir}/#{repo_name}"
     gh_stem = "https://github.com/"
-    Git.clone("#{gh_stem}#{repo_name}", "#{@options[:output]}/#{repo_name}")
+    begin
+      Git.clone("#{gh_stem}#{repo_name}", "#{@output_dir}/#{repo_name}")
+    rescue Git::GitExecuteError
+      puts "An error occurred during cloning of repository #{repo_name}"
+    end
+  end
+
+  def dir_provided?
+    !@options[:output].nil?    
+  end
+
+  def create_results_dir
+    if dir_provided?
+      if !File.directory? @options[:output]
+        FileUtils.mkdir_p @options[:output]
+        @output_dir = @options[:output]
+      end
+    else
+      if !File.directory? "./output"
+        FileUtils.mkdir_p "./output"
+        @output_dir = "./output"
+      end
+    end
   end
 
 end
