@@ -88,15 +88,16 @@ class App
   private
 
   def clone_repo(repo_name)
-    if !File.directory? "#{@output_dir}/#{repo_name}"
-      FileUtils.mkdir_p "#{@output_dir}/#{repo_name}"
+    output_dir = "#{@output_dir}/clones/#{repo_name}"
+    if !File.directory? output_dir
+      FileUtils.mkdir_p output_dir
     end
-    puts "Cloning repository #{repo_name} into #{@output_dir}/#{repo_name}"
+    puts "Cloning repository #{repo_name} into output_dir"
     gh_stem = "https://github.com/"
     begin
-      Git.clone("#{gh_stem}#{repo_name}", "#{@output_dir}/#{repo_name}")
+      Git.clone("#{gh_stem}#{repo_name}", "#{output_dir}")
     rescue Git::GitExecuteError
-      puts "An error occurred during cloning of repository #{repo_name}"
+      puts "An error occurred during cloning of repository #{output_dir}"
     end
   end
 
