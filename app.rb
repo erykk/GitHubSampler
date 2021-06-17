@@ -43,14 +43,24 @@ class App
     end
 
     puts "Writing details"
-    puts details_output_dir
     repo_hash = Hash.new
     @repos.each do |repo|
-      File.open( "#{details_output_dir}/test.json", "w+") { |f| f.write(repo) }
+      file_name = repo.full_name.split("/")[1]
+      FileUtils.touch "./#{details_output_dir}/#{file_name}.json"
+      File.open( "./#{details_output_dir}/#{file_name}.json", "w+") { |f| f.write(extract_json(repo).to_json) }
     end
   end
 
+  def extract_json(resource)
+    obj = Hash.new
+    resource.each do |e|
+      obj[e[0]] = e[1]
+    end
+    obj
+  end
+
   def fetch_repos(query)
+    puts query
     @result = @client.search_repos(query)
     @repos = @result.items
     puts @result.total_count
