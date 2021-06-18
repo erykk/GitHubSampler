@@ -106,17 +106,13 @@ class App
   end
 
   def create_results_dir
-    if dir_provided?
-      if !File.directory? @options[:output]
-        FileUtils.mkdir_p @options[:output]
-        @output_dir = @options[:output]
-      end
-    else
-      if !File.directory? "./output"
-        FileUtils.mkdir_p "./output"
-        @output_dir = "./output"
-      end
-    end
+    @output_dir = dir_provided? ? @options[:output] : "./output"
+    remove_dir @output_dir
+    FileUtils.mkdir_p @output_dir
+  end
+
+  def remove_dir(dir)
+    FileUtils.rm_rf dir unless !File.directory?(dir)
   end
 
 end
