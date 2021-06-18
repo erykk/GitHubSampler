@@ -25,11 +25,9 @@ class App
     create_results_dir
   end
 
-  #{repo.full_name.split("/")[1]}
-
   def get_access_token(token)
 
-    if token.include?(".")
+    if !token.include?(".")
       return token.to_str
     end
 
@@ -37,14 +35,14 @@ class App
   end
 
   def save_details
-    details_output_dir = "#{@output_dir}/details"
-    if !File.directory? details_output_dir
-      FileUtils.mkdir_p details_output_dir
-    end
 
-    puts "Writing details"
     repo_hash = Hash.new
+
+    details_output_dir = "#{@output_dir}/details"
+    create_new_dir details_output_dir    
+    
     @repos.each do |repo|
+      puts "Writing details for repository #{repo.full_name}"
       file_name = repo.full_name.split("/")[1]
       FileUtils.touch "./#{details_output_dir}/#{file_name}.json"
       File.open( "./#{details_output_dir}/#{file_name}.json", "w+") { |f| f.write(extract_json(repo).to_json) }
@@ -53,21 +51,22 @@ class App
 
   def extract_json(resource)
     obj = Hash.new
-    resource.each do |e|
-      obj[e[0]] = e[1]
-    end
+    resource.map{ |k, v| obj[k] = v }
     obj
   end
 
   def fetch_repos(query)
-    puts query
-    @result = @client.search_repos(query)
+    begin
+      @result = @client.search_repos(query)
+    rescue Octokit::Unauthorized
+      puts "Octokit Error 401 - Bad Credentials"
+      exit 
+    end
     @repos = @result.items
-    puts @result.total_count
+    puts "Repositories matchig query {#{query}} -> #{@result.total_count}"
   end
 
   def sample(size)
-    puts "Sample of size #{size}"
     @repos = @result.items.sample(size.to_i)
   end
 
@@ -77,23 +76,13 @@ class App
     end
   end
 
-  # def log
-  #   File.open("./repositories.json", "w") do |file|
-  #     @repos.each do |repo|
-  #       file.write(repo.to_json)
-  #     end
-  #   end
-  # end
-
   private
 
   def clone_repo(repo_name)
     output_dir = "#{@output_dir}/clones/#{repo_name}"
-    if !File.directory? output_dir
-      FileUtils.mkdir_p output_dir
-    end
-    puts "Cloning repository #{repo_name} into output_dir"
     gh_stem = "https://github.com/"
+    create_new_dir output_dir
+    puts "Cloning repository #{repo_name} into output_dir"    
     begin
       Git.clone("#{gh_stem}#{repo_name}", "#{output_dir}")
     rescue Git::GitExecuteError
@@ -107,12 +96,20 @@ class App
 
   def create_results_dir
     @output_dir = dir_provided? ? @options[:output] : "./output"
-    remove_dir @output_dir
-    FileUtils.mkdir_p @output_dir
+    create_new_dir @output_dir
   end
 
   def remove_dir(dir)
     FileUtils.rm_rf dir unless !File.directory?(dir)
+  end
+
+  def create_dir(dir)
+    FileUtils.mkdir_p dir unless File.directory?(dir)
+  end
+
+  def create_new_dir(dir)
+    remove_dir dir
+    create_dir dir
   end
 
 end
